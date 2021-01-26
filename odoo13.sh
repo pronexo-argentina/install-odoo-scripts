@@ -19,23 +19,20 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-# AVISO IMPORTANTE!!! (WARNING!!!)
-# ASEGURESE DE TENER UN SERVIDOR / VPS CON AL MENOS > 2GB DE RAM
-# You must to have at least > 2GB of RAM
-# Ubuntu 18.04, 19, 20.04 LTS tested
-# v2.3
+# v1.9
 # Last updated: 2020-07-19
 ##############################################################################
 
 OS_NAME=$(lsb_release -cs)
 usuario=$USER
 DIR_PATH=$(pwd)
-VCODE=14
-VERSION=master
-PORT=1469
+VCODE=13
+VERSION=13.0
+PORT=1369
 DEPTH=1
-PROJECT_NAME=odoo14
-PATHBASE=/opt/$PROJECT_NAME
+# E.G: mycustomer-name
+CLIENT=odoosrc
+PATHBASE=/opt/$CLIENT
 PATH_LOG=$PATHBASE/log
 PATHREPOS=$PATHBASE/$VERSION/extra-addons
 PATHREPOS_OCA=$PATHREPOS/oca
@@ -43,15 +40,7 @@ PATHREPOS_OCA=$PATHREPOS/oca
 if [[ $OS_NAME == "disco" ]];
 
 then
-	echo $OS_NAME
-	OS_NAME="bionic"
-
-fi
-
-if [[ $OS_NAME == "focal" ]];
-
-then
-	echo $OS_NAME
+	# This code is compatible with Ubuntu 19.04
 	OS_NAME="bionic"
 
 fi
@@ -73,24 +62,20 @@ sudo su - postgres -c "createuser -s $usuario"
 
 sudo mkdir $PATHBASE
 sudo mkdir $PATHBASE/$VERSION
+sudo mkdir $PATH_LOG
 sudo mkdir $PATHREPOS
 sudo mkdir $PATHREPOS_OCA
-sudo mkdir $PATH_LOG
 cd $PATHBASE
-
 # Download Odoo from git source
 sudo git clone https://github.com/odoo/odoo.git -b $VERSION --depth $DEPTH $PATHBASE/$VERSION/odoo
-sudo git clone https://github.com/odooerpdevelopers/backend_theme.git -b $VERSION --depth $DEPTH $PATHREPOS/backend_theme
-
-
 
 # Install python3 and dependencies for Odoo
 sudo apt-get -y install gcc python3-dev libxml2-dev libxslt1-dev \
  libevent-dev libsasl2-dev libldap2-dev libpq-dev \
- libpng-dev libjpeg-dev xfonts-base xfonts-75dpi
+ libpng-dev libjpeg-dev
 
-sudo apt-get -y install python3 python3-pip python3-setuptools htop
-sudo pip3 install virtualenv
+sudo apt-get -y install python3 python3-pip python-pip
+sudo pip3 install libsass vobject qrcode num2words setuptools
 
 # FIX wkhtml* dependencie Ubuntu Server 18.04
 sudo apt-get -y install libxrender1
@@ -101,8 +86,8 @@ sudo ln -s /usr/bin/nodejs /usr/bin/node
 sudo npm install -g less
 
 # Download & install WKHTMLTOPDF
-sudo rm $PATHBASE/wkhtmltox*.deb
-
+sudo rm $PATHBASE/wkhtmltox_0.12.5-1*.deb
+sudo rm wkhtmltox_0.12.5-1*.deb
 if [[ "`getconf LONG_BIT`" == "32" ]];
 
 then
@@ -112,25 +97,19 @@ else
 fi
 
 sudo dpkg -i --force-depends wkhtmltox_0.12.5-1*.deb
-sudo apt-get -f -y install
 sudo ln -s /usr/local/bin/wkhtml* /usr/bin
-sudo rm $PATHBASE/wkhtmltox*.deb
-sudo apt-get -f -y install
+
 
 # install python requirements file (Odoo)
-sudo rm -rf $PATHBASE/$VERSION/venv
-sudo mkdir $PATHBASE/$VERSION/venv
-sudo chown -R $usuario: $PATHBASE/$VERSION/venv
-virtualenv -q -p python3 $PATHBASE/$VERSION/venv
-sed -i '/libsass/d' $PATHBASE/$VERSION/odoo/requirements.txt
-$PATHBASE/$VERSION/venv/bin/pip3 install libsass vobject qrcode num2words
-$PATHBASE/$VERSION/venv/bin/pip3 install -r $PATHBASE/$VERSION/odoo/requirements.txt
+sudo pip3 install -r $PATHBASE/$VERSION/odoo/requirements.txt
+sudo apt-get -f -y install
 
 cd $DIR_PATH
 
 sudo mkdir $PATHBASE/config
 sudo rm $PATHBASE/config/odoo$VCODE.conf
 sudo touch $PATHBASE/config/odoo$VCODE.conf
+
 echo "
 [options]
 ; This is the password that allows database operations:
@@ -146,17 +125,15 @@ logfile= $PATH_LOG/odoo$VCODE-server.log
 
 addons_path =
     $PATHREPOS,
-    $PATHREPOS/backend_theme,
-    $PATHREPOS_OCA/web,
     $PATHBASE/$VERSION/odoo/addons
 
 #################################################################
 
 xmlrpc_port = $PORT
-;dbfilter = odoo$VCODE
+;dbfilter = odoo13
 logrotate = True
-limit_time_real = 6000
-limit_time_cpu = 6000
+limit_time_real = 1000
+limit_time_cpu = 1000
 " | sudo tee --append $PATHBASE/config/odoo$VCODE.conf
 
 sudo rm /etc/systemd/system/odoo$VCODE.service
@@ -164,13 +141,13 @@ sudo touch /etc/systemd/system/odoo$VCODE.service
 sudo chmod +x /etc/systemd/system/odoo$VCODE.service
 echo "
 [Unit]
-Description=Odoo$VCODE
+Description=odoo$VCODE
 After=postgresql.service
 
 [Service]
 Type=simple
 User=$usuario
-ExecStart=$PATHBASE/$VERSION/venv/bin/python $PATHBASE/$VERSION/odoo/odoo-bin --config $PATHBASE/config/odoo$VCODE.conf
+ExecStart=$PATHBASE/$VERSION/odoo/odoo-bin --config $PATHBASE/config/odoo$VCODE.conf
 
 [Install]
 WantedBy=multi-user.target
@@ -180,7 +157,9 @@ sudo systemctl enable odoo$VCODE.service
 sudo systemctl start odoo$VCODE
 
 sudo chown -R $usuario: $PATHBASE
+sudo chown -R $usuario: $PATHBASE/config
+
 
 echo "Odoo $VERSION Installation has finished!! ;) by pronexo.com"
-IP=$(ip route get 8.8.8.8 | head -1 | cut -d' ' -f7)
-echo "You can access from: http://$IP:$PORT  or http://localhost:$PORT"
+echo "You can access from: http://mydomain.com:$PORT  or http://localhost:$PORT"
+
