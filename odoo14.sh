@@ -22,9 +22,9 @@
 # AVISO IMPORTANTE!!! (WARNING!!!)
 # ASEGURESE DE TENER UN SERVIDOR / VPS CON AL MENOS > 2GB DE RAM
 # You must to have at least > 2GB of RAM
-# Ubuntu 18.04, 19, 20.04 LTS tested
-# v2.3
-# Last updated: 2020-07-19
+# Ubuntu 20.04 LTS tested
+# v2.4
+# Last updated: 2021-03-12
 ##############################################################################
 
 OS_NAME=$(lsb_release -cs)
