@@ -179,16 +179,6 @@ sudo systemctl start odoo$VCODE
 
 
 
-
-
-
-
-
-
-
-
-
-
 echo "Instalando nginx"
 sudo apt-get -y install nginx
 
