@@ -146,7 +146,7 @@ logfile= $PATH_LOG/odoo$VCODE-server.log
 addons_path =
     $PATHREPOS,
     $PATHREPOS_OCA/web,
-    $PATHBASE/$VERSION/odoo/odoo/addons
+    $PATHBASE/$VERSION/odoo/addons
 
 #################################################################
 
